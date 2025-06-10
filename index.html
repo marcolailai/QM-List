@@ -46,20 +46,26 @@
     h3 {
       margin-top: 20px;
     }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
-<div class="top-bar">
+<!-- Top Navigation -->
+<div class="top-bar" id="topBar">
   <button onclick="showQMList()">QM List</button>
   <button onclick="showRequestForm()">Request Form</button>
 </div>
 
-<div class="action-bar">
+<!-- Action Buttons -->
+<div class="action-bar hidden" id="actionBar">
   <button onclick="showView()">View</button>
   <button onclick="showManage()">Manage</button>
 </div>
 
+<!-- Main Content -->
 <div class="content" id="contentContainer">
   <!-- Dynamic content will load here -->
 </div>
@@ -70,17 +76,18 @@
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50dmZ3d2drcmd6cWtraW9jZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1MzI0NDIsImV4cCI6MjA2NTEwODQ0Mn0.BpgAfSlV9oJ844lNIjNhi43Nh8DWa-J3oKAj6YXkJPM' // Replace with your real key
   );
 
-  // Default view when page loads
   window.onload = () => {
     showView();
   };
 
-  async function showQMList() {
-    // Could be used for tab control or focus
-    // This button can stay if future logic is needed
+  function showQMList() {
+    // Show only QM List and Request Form buttons
+    document.getElementById('actionBar').classList.remove('hidden');
+    document.getElementById('contentContainer').innerHTML = '';
   }
 
   function showRequestForm() {
+    document.getElementById('actionBar').classList.add('hidden');
     document.getElementById('contentContainer').innerHTML = '<p>Request Form content coming soon...</p>';
   }
 
@@ -94,8 +101,7 @@
       return;
     }
 
-    // Group by category
-    const categories = [...new Set(items.map(item => item.category))];
+    const categories = [...new Set(items.map(item => item.Category))];
 
     categories.forEach(category => {
       const tableDiv = document.createElement('div');
@@ -117,18 +123,17 @@
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
-      // Sort by name alphabetically
       const sortedItems = items
-        .filter(i => i.category === category)
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .filter(i => i.Category === category)
+        .sort((a, b) => a.Name.localeCompare(b.Name));
 
       sortedItems.forEach(i => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${i.name}</td>
-          <td>${i.id}</td>
-          <td>${i.quantity}</td>
-          <td>${i.comment || ''}</td>`;
+          <td>${i.Name}</td>
+          <td>${i.ID}</td>
+          <td>${i.Quantity}</td>
+          <td>${i.Comment || ''}</td>`;
         tbody.appendChild(row);
       });
 
@@ -139,7 +144,8 @@
   }
 
   function showManage() {
-    document.getElementById('contentContainer').innerHTML = '<p>Manage mode coming soon...</p>';
+    const container = document.getElementById('contentContainer');
+    container.innerHTML = '<p>Manage mode coming soon...</p>';
   }
 </script>
 
