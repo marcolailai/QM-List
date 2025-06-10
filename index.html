@@ -1,153 +1,144 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QM List</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <meta charset="UTF-8">
+  <title>Inventory Manager</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    .top-bar, .action-bar {
-      display: flex;
-      justify-content: space-around;
-      padding: 10px;
-      background: #f0f0f0;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    .top-bar button, .action-bar button {
-      flex: 1;
-      margin: 0 5px;
-      padding: 10px;
-      font-size: 16px;
-    }
-    .content {
-      padding: 10px;
-      overflow-y: auto;
-      max-height: 85vh;
-    }
-    .category-table {
-      margin-bottom: 30px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    h3 {
-      margin-top: 20px;
-    }
-    .hidden {
-      display: none;
-    }
+    body { font-family: Arial, sans-serif; margin: 30px; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 8px; }
+    th { background-color: #f2f2f2; }
+    form { margin-top: 20px; }
+    label { display: block; margin-top: 10px; }
   </style>
 </head>
 <body>
+  <h2>Inventory Table</h2>
+  <table id="inventoryTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Quantity</th>
+        <th>DateBorrowed</th>
+        <th>DateReturned</th>
+        <th>Comment</th>
+        <th>Borrower</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
 
-<!-- Top Navigation -->
-<div class="top-bar" id="topBar">
-  <button onclick="showQMList()">QM List</button>
-  <button onclick="showRequestForm()">Request Form</button>
-</div>
+  <h3>Add New Item</h3>
+  <form id="addForm">
+    <label>ID: <input type="text" name="ID" required></label>
+    <label>Name: <input type="text" name="Name" required></label>
+    <label>Category: <input type="text" name="Category"></label>
+    <label>Quantity: <input type="number" name="Quantity" required></label>
+    <label>Comment: <input type="text" name="Comment"></label>
+    <button type="submit">Add Item</button>
+  </form>
 
-<!-- Action Buttons -->
-<div class="action-bar hidden" id="actionBar">
-  <button onclick="showView()">View</button>
-  <button onclick="showManage()">Manage</button>
-</div>
+  <h3>Delete Item</h3>
+  <label for="deleteId">Select ID:</label>
+  <select id="deleteId"></select>
+  <button id="deleteButton">Delete</button>
 
-<!-- Main Content -->
-<div class="content" id="contentContainer">
-  <!-- Dynamic content will load here -->
-</div>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-<script>
-  const supabase = supabase.createClient(
-    'https://ntvfwwgkrgzqkkiocetg.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50dmZ3d2drcmd6cWtraW9jZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1MzI0NDIsImV4cCI6MjA2NTEwODQ0Mn0.BpgAfSlV9oJ844lNIjNhi43Nh8DWa-J3oKAj6YXkJPM' // Replace with your real key
-  );
+    const supabaseUrl = 'https://ntvfwwgkrgzqkkiocetg.supabase.co';  // 🔁 Replace with your Supabase URL
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50dmZ3d2drcmd6cWtraW9jZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1MzI0NDIsImV4cCI6MjA2NTEwODQ0Mn0.BpgAfSlV9oJ844lNIjNhi43Nh8DWa-J3oKAj6YXkJPM';                        // 🔁 Replace with your anon/public key
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-  window.onload = () => {
-    showView();
-  };
+    const tableBody = document.getElementById('tableBody');
+    const deleteDropdown = document.getElementById('deleteId');
 
-  function showQMList() {
-    // Show only QM List and Request Form buttons
-    document.getElementById('actionBar').classList.remove('hidden');
-    document.getElementById('contentContainer').innerHTML = '';
-  }
+    async function loadInventory() {
+      tableBody.innerHTML = '';
+      deleteDropdown.innerHTML = '';
 
-  function showRequestForm() {
-    document.getElementById('actionBar').classList.add('hidden');
-    document.getElementById('contentContainer').innerHTML = '<p>Request Form content coming soon...</p>';
-  }
+      const { data, error } = await supabase
+        .from('Inventory')
+        .select('*')
+        .order('ID');
 
-  async function showView() {
-    const container = document.getElementById('contentContainer');
-    container.innerHTML = '';
+      if (error) {
+        console.error('Error loading inventory:', error);
+        return;
+      }
 
-    const { data: items, error } = await supabase.from('Inventory').select('*');
-    if (error) {
-      alert("Error loading inventory.");
-      return;
+      data.forEach(item => {
+        const row = document.createElement('tr');
+
+        const formatArray = arr => Array.isArray(arr) ? arr.join(', ') : '';
+
+        row.innerHTML = `
+          <td>${item.ID}</td>
+          <td>${item.Name}</td>
+          <td>${item.Category || ''}</td>
+          <td>${item.Quantity}</td>
+          <td>${formatArray(item.DateBorrowed)}</td>
+          <td>${formatArray(item.DateReturned)}</td>
+          <td>${item.Comment || ''}</td>
+          <td>${formatArray(item.Borrower)}</td>
+        `;
+        tableBody.appendChild(row);
+
+        const option = document.createElement('option');
+        option.value = item.ID;
+        option.textContent = item.ID;
+        deleteDropdown.appendChild(option);
+      });
     }
 
-    const categories = [...new Set(items.map(item => item.Category))];
+    document.getElementById('deleteButton').addEventListener('click', deleteItem);
+    async function deleteItem() {
+      const id = deleteDropdown.value;
+      if (!id) return;
 
-    categories.forEach(category => {
-      const tableDiv = document.createElement('div');
-      tableDiv.className = 'category-table';
+      const { error } = await supabase
+        .from('Inventory')
+        .delete()
+        .eq('ID', id)
+	.select();
 
-      const header = document.createElement('h3');
-      header.textContent = category;
-      tableDiv.appendChild(header);
+      if (error) {
+	console.error('Delete error:', error);
+        alert('Error deleting item: ' + error.message);
+        return;
+      }
 
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      thead.innerHTML = `
-        <tr>
-          <th>Name</th>
-          <th>ID</th>
-          <th>Quantity</th>
-          <th>Comment</th>
-        </tr>`;
-      table.appendChild(thead);
+      alert(`Deleted item with ID: ${id}`);
+      loadInventory();
+    }
 
-      const tbody = document.createElement('tbody');
-      const sortedItems = items
-        .filter(i => i.Category === category)
-        .sort((a, b) => a.Name.localeCompare(b.Name));
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const newItem = Object.fromEntries(formData.entries());
+      newItem.Quantity = parseInt(newItem.Quantity); // Ensure number
 
-      sortedItems.forEach(i => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${i.Name}</td>
-          <td>${i.ID}</td>
-          <td>${i.Quantity}</td>
-          <td>${i.Comment || ''}</td>`;
-        tbody.appendChild(row);
-      });
+      // Set array fields to null or empty arrays (depending on your Supabase schema default)
+      newItem.DateBorrowed = [];
+      newItem.DateReturned = [];
+      newItem.Borrower = [];
 
-      table.appendChild(tbody);
-      tableDiv.appendChild(table);
-      container.appendChild(tableDiv);
+      const { error } = await supabase
+        .from('Inventory')
+        .insert([newItem]);
+
+      if (error) {
+        alert('Error adding item: ' + error.message);
+        return;
+      }
+
+      alert('Item added!');
+      e.target.reset();
+      loadInventory();
     });
-  }
 
-  function showManage() {
-    const container = document.getElementById('contentContainer');
-    container.innerHTML = '<p>Manage mode coming soon...</p>';
-  }
-</script>
-
+    loadInventory();
+  </script>
 </body>
 </html>
