@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardware Borrowing System</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 1em; }
+    input, button { display: block; margin-top: 10px; width: 100%; padding: 10px; }
+    .item { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h2>Borrow Hardware</h2>
+
+<input id="item_name" placeholder="Item name" />
+<input id="borrower" placeholder="Your name" />
+<button onclick="borrowItem()">Borrow</button>
+
+<h2>Borrowed Items</h2>
+<div id="items"></div>
+
+<script>
+  const supabase = supabase.createClient('https://ntvfwwgkrgzqkkiocetg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50dmZ3d2drcmd6cWtraW9jZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1MzI0NDIsImV4cCI6MjA2NTEwODQ0Mn0.BpgAfSlV9oJ844lNIjNhi43Nh8DWa-J3oKAj6YXkJPM');
+
+  async function borrowItem() {
+    const item_name = document.getElementById('item_name').value;
+    const borrower = document.getElementById('borrower').value;
+    if (!item_name || !borrower) return alert("Please fill in both fields");
+
+    await supabase.from('borrowed_items').insert([{ item_name, borrower }]);
+    loadItems();
+  }
+
+  async function returnItem(id) {
+    await supabase.from('borrowed_items').update({ returned: true }).eq('id', id);
+    loadItems();
+  }
+
+  async function loadItems() {
+    const { data, error } = await supabase
+      .from('borrowed_items')
+      .select('*')
+      .eq('returned', false)
+      .order('borrowed_at', { ascending: false });
+
+    const container = document.getElementById('items');
+    container.innerHTML = '';
+
+    data.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <strong>${item.item_name}</strong><br>
+        Borrowed by: ${item.borrower}<br>
+        On: ${new Date(item.borrowed_at).toLocaleString()}<br>
+        <button onclick="returnItem(${item.id})">Mark as Returned</button>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  loadItems();
+</script>
+
+</body>
+</html>
