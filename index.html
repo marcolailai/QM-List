@@ -1,144 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Inventory Manager</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 30px; }
-    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 8px; }
-    th { background-color: #f2f2f2; }
-    form { margin-top: 20px; }
-    label { display: block; margin-top: 10px; }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile QM Interface</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h2>Inventory Table</h2>
-  <table id="inventoryTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Quantity</th>
-        <th>DateBorrowed</th>
-        <th>DateReturned</th>
-        <th>Comment</th>
-        <th>Borrower</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <div class="container">
 
-  <h3>Add New Item</h3>
-  <form id="addForm">
-    <label>ID: <input type="text" name="ID" required></label>
-    <label>Name: <input type="text" name="Name" required></label>
-    <label>Category: <input type="text" name="Category"></label>
-    <label>Quantity: <input type="number" name="Quantity" required></label>
-    <label>Comment: <input type="text" name="Comment"></label>
-    <button type="submit">Add Item</button>
-  </form>
+    <!-- Top Level Buttons -->
+    <div class="button-row">
+      <button id="qmListBtn">QM List</button>
+      <button id="requestFormBtn">Request Form</button>
+    </div>
 
-  <h3>Delete Item</h3>
-  <label for="deleteId">Select ID:</label>
-  <select id="deleteId"></select>
-  <button id="deleteButton">Delete</button>
+    <!-- QM List Section -->
+    <div id="qmOptions" class="hidden">
+      <button id="downloadBtn">Download</button>
+      <button id="manageBtn">Manage</button>
+    </div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    <!-- Manage Section -->
+    <div id="manageOptions" class="hidden">
+      <button id="addBtn">Add</button>
+      <button id="removeBtn">Remove</button>
+    </div>
 
-    const supabaseUrl = 'https://ntvfwwgkrgzqkkiocetg.supabase.co';  // 🔁 Replace with your Supabase URL
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50dmZ3d2drcmd6cWtraW9jZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1MzI0NDIsImV4cCI6MjA2NTEwODQ0Mn0.BpgAfSlV9oJ844lNIjNhi43Nh8DWa-J3oKAj6YXkJPM';                        // 🔁 Replace with your anon/public key
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    <!-- Add Form -->
+    <form id="addForm" class="hidden">
+      <h2>Add QM Item</h2>
+      <div class="form-group">
+        <label for="addName">Name</label>
+        <input type="text" id="addName" name="name" required />
+      </div>
+      <div class="form-group">
+        <label for="addID">ID</label>
+        <input type="text" id="addID" name="id" required />
+      </div>
+      <div class="form-group">
+        <label for="addCategory">Category</label>
+        <input type="text" id="addCategory" name="category" required />
+      </div>
+      <div class="form-group">
+        <label for="addComment">Comment</label>
+        <textarea id="addComment" name="comment"></textarea>
+      </div>
+      <button type="submit">Submit</button>
+    </form>
 
-    const tableBody = document.getElementById('tableBody');
-    const deleteDropdown = document.getElementById('deleteId');
+    <!-- Remove Form -->
+    <form id="removeForm" class="hidden">
+      <h2>Remove QM Item</h2>
+      <div class="form-group">
+        <label for="removeCategory">Category</label>
+        <select id="removeCategory"></select>
+      </div>
+      <div class="form-group">
+        <label for="removeID">ID</label>
+        <select id="removeID"></select>
+      </div>
+      <div class="form-group">
+        <label>Name:</label>
+        <span id="removeNameLabel" class="info-label">[Name will be displayed here]</span>
+      </div>
+      <button type="submit" class="delete-btn">Delete</button>
+    </form>
 
-    async function loadInventory() {
-      tableBody.innerHTML = '';
-      deleteDropdown.innerHTML = '';
+    <!-- Request Form -->
+    <form id="requestForm" class="hidden">
+      <h2>Request Form</h2>
+      <div class="form-group">
+        <label for="reqName">Name</label>
+        <input type="text" id="reqName" required />
+      </div>
+      <div class="form-group">
+        <label for="reqContact">Contact Number</label>
+        <input type="tel" id="reqContact" required />
+      </div>
+      <div class="form-group">
+        <label for="reqPurpose">Purpose</label>
+        <textarea id="reqPurpose" required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="reqBorrowDate">Date Borrowed</label>
+        <input type="date" id="reqBorrowDate" required />
+      </div>
+      <div class="form-group">
+        <label for="reqReturnDate">Date Returned</label>
+        <input type="date" id="reqReturnDate" required />
+      </div>
+      <div class="form-group">
+        <label for="reqApprovedBy">Approved By</label>
+        <input type="text" id="reqApprovedBy" required />
+      </div>
+      <button type="submit">Submit</button>
+    </form>
+  </div>
 
-      const { data, error } = await supabase
-        .from('Inventory')
-        .select('*')
-        .order('ID');
-
-      if (error) {
-        console.error('Error loading inventory:', error);
-        return;
-      }
-
-      data.forEach(item => {
-        const row = document.createElement('tr');
-
-        const formatArray = arr => Array.isArray(arr) ? arr.join(', ') : '';
-
-        row.innerHTML = `
-          <td>${item.ID}</td>
-          <td>${item.Name}</td>
-          <td>${item.Category || ''}</td>
-          <td>${item.Quantity}</td>
-          <td>${formatArray(item.DateBorrowed)}</td>
-          <td>${formatArray(item.DateReturned)}</td>
-          <td>${item.Comment || ''}</td>
-          <td>${formatArray(item.Borrower)}</td>
-        `;
-        tableBody.appendChild(row);
-
-        const option = document.createElement('option');
-        option.value = item.ID;
-        option.textContent = item.ID;
-        deleteDropdown.appendChild(option);
-      });
-    }
-
-    document.getElementById('deleteButton').addEventListener('click', deleteItem);
-    async function deleteItem() {
-      const id = deleteDropdown.value;
-      if (!id) return;
-
-      const { error } = await supabase
-        .from('Inventory')
-        .delete()
-        .eq('ID', id)
-	.select();
-
-      if (error) {
-	console.error('Delete error:', error);
-        alert('Error deleting item: ' + error.message);
-        return;
-      }
-
-      alert(`Deleted item with ID: ${id}`);
-      loadInventory();
-    }
-
-    document.getElementById('addForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const newItem = Object.fromEntries(formData.entries());
-      newItem.Quantity = parseInt(newItem.Quantity); // Ensure number
-
-      // Set array fields to null or empty arrays (depending on your Supabase schema default)
-      newItem.DateBorrowed = [];
-      newItem.DateReturned = [];
-      newItem.Borrower = [];
-
-      const { error } = await supabase
-        .from('Inventory')
-        .insert([newItem]);
-
-      if (error) {
-        alert('Error adding item: ' + error.message);
-        return;
-      }
-
-      alert('Item added!');
-      e.target.reset();
-      loadInventory();
-    });
-
-    loadInventory();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
