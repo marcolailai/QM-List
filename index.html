@@ -1,68 +1,131 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardware Borrowing System</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 1em; }
-    input, button { display: block; margin-top: 10px; width: 100%; padding: 10px; }
-    .item { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
-  </style>
+  <title>Inventory Manager</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
+  <h1>Inventory Manager</h1>
+  <button onclick="showAddForm()">Add</button>
+  <button onclick="showDeleteDropdown()">Remove</button>
 
-<h2>Borrow Hardware</h2>
+  <div id="formContainer" style="display:none;">
+    <h3>Add Item</h3>
+    <form id="addForm">
+      <input type="text" id="name" placeholder="Name" required><br>
+      <input type="text" id="code" placeholder="Code" required><br>
+      <input type="text" id="category" placeholder="Category" required><br>
+      <input type="number" id="quantity" placeholder="Quantity" required><br>
+      <input type="text" id="comment" placeholder="Comment"><br>
+      <button type="submit">Submit</button>
+    </form>
+  </div>
 
-<input id="item_name" placeholder="Item name" />
-<input id="borrower" placeholder="Your name" />
-<button onclick="borrowItem()">Borrow</button>
+  <div id="deleteContainer" style="display:none;">
+    <h3>Delete Item</h3>
+    <select id="docSelect" onchange="showDocDetails(this.value)"></select>
+    <div id="docDetails"></div>
+    <button onclick="deleteDocument()">Delete</button>
+  </div>
 
-<h2>Borrowed Items</h2>
-<div id="items"></div>
+  <h2>Inventory Table</h2>
+  <table border="1" id="inventoryTable">
+    <thead>
+      <tr><th>Name</th><th>Category</th><th>Quantity</th><th>Comment</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-<script>
-  const supabase = supabase.createClient('https://ntvfwwgkrgzqkkiocetg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50dmZ3d2drcmd6cWtraW9jZXRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1MzI0NDIsImV4cCI6MjA2NTEwODQ0Mn0.BpgAfSlV9oJ844lNIjNhi43Nh8DWa-J3oKAj6YXkJPM');
+  <script>
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyAUvX1JAOr5Q7KLE03RpPWlSAgJLrjLPTI",
+      authDomain: "inventoryborrowing.firebaseapp.com",
+      projectId: "inventoryborrowing",
+      storageBucket: "inventoryborrowing.firebasestorage.app",
+      messagingSenderId: "65608029116",
+      appId: "1:65608029116:web:b50fb4448aa519013e11b9",
+      measurementId: "G-90CLH1VMVX"
+    };
 
-  async function borrowItem() {
-    const item_name = document.getElementById('item_name').value;
-    const borrower = document.getElementById('borrower').value;
-    if (!item_name || !borrower) return alert("Please fill in both fields");
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    await supabase.from('borrowed_items').insert([{ item_name, borrower }]);
-    loadItems();
-  }
+    function showAddForm() {
+      document.getElementById('formContainer').style.display = 'block';
+      document.getElementById('deleteContainer').style.display = 'none';
+    }
 
-  async function returnItem(id) {
-    await supabase.from('borrowed_items').update({ returned: true }).eq('id', id);
-    loadItems();
-  }
+    function showDeleteDropdown() {
+      document.getElementById('formContainer').style.display = 'none';
+      document.getElementById('deleteContainer').style.display = 'block';
+      loadDocumentIDs();
+    }
 
-  async function loadItems() {
-    const { data, error } = await supabase
-      .from('borrowed_items')
-      .select('*')
-      .eq('returned', false)
-      .order('borrowed_at', { ascending: false });
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const code = document.getElementById('code').value;
+      const category = document.getElementById('category').value;
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const comment = document.getElementById('comment').value;
 
-    const container = document.getElementById('items');
-    container.innerHTML = '';
-
-    data.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'item';
-      div.innerHTML = `
-        <strong>${item.item_name}</strong><br>
-        Borrowed by: ${item.borrower}<br>
-        On: ${new Date(item.borrowed_at).toLocaleString()}<br>
-        <button onclick="returnItem(${item.id})">Mark as Returned</button>
-      `;
-      container.appendChild(div);
+      await db.collection('Inventory').add({ name, code, category, quantity, comment });
+      location.reload();
     });
-  }
 
-  loadItems();
-</script>
+    async function loadDocumentIDs() {
+      const snapshot = await db.collection('Inventory').orderBy('category').get();
+      const select = document.getElementById('docSelect');
+      select.innerHTML = '<option value="">Select Document ID</option>';
+      snapshot.forEach(doc => {
+        const option = document.createElement('option');
+        option.value = doc.id;
+        option.textContent = doc.id;
+        select.appendChild(option);
+      });
+    }
 
+    async function showDocDetails(docId) {
+      if (!docId) return;
+      const doc = await db.collection('Inventory').doc(docId).get();
+      if (doc.exists) {
+        const data = doc.data();
+        document.getElementById('docDetails').innerHTML = `
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Category:</strong> ${data.category}</p>
+          <p><strong>Quantity:</strong> ${data.quantity}</p>
+          <p><strong>Comment:</strong> ${data.comment}</p>
+        `;
+      }
+    }
+
+    async function deleteDocument() {
+      const docId = document.getElementById('docSelect').value;
+      if (docId) {
+        await db.collection('Inventory').doc(docId).delete();
+        location.reload();
+      }
+    }
+
+    async function loadInventoryTable() {
+      const snapshot = await db.collection('Inventory').orderBy('category').get();
+      const tbody = document.querySelector('#inventoryTable tbody');
+      tbody.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const row = `<tr>
+          <td>${data.name}</td>
+          <td>${data.category}</td>
+          <td>${data.quantity}</td>
+          <td>${data.comment}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    loadInventoryTable();
+  </script>
 </body>
 </html>
