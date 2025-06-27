@@ -1,131 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Inventory Manager</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile QM Interface</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>Inventory Manager</h1>
-  <button onclick="showAddForm()">Add</button>
-  <button onclick="showDeleteDropdown()">Remove</button>
+  <div class="container">
 
-  <div id="formContainer" style="display:none;">
-    <h3>Add Item</h3>
-    <form id="addForm">
-      <input type="text" id="name" placeholder="Name" required><br>
-      <input type="text" id="code" placeholder="Code" required><br>
-      <input type="text" id="category" placeholder="Category" required><br>
-      <input type="number" id="quantity" placeholder="Quantity" required><br>
-      <input type="text" id="comment" placeholder="Comment"><br>
+    <!-- Top Level Buttons -->
+    <div class="button-row">
+      <button id="qmListBtn">QM List</button>
+      <button id="requestFormBtn">Request Form</button>
+    </div>
+
+    <!-- QM List Section -->
+    <div id="qmOptions" class="hidden">
+      <button id="downloadBtn">Download</button>
+      <button id="manageBtn">Manage</button>
+    </div>
+
+    <!-- Manage Section -->
+    <div id="manageOptions" class="hidden">
+      <button id="addBtn">Add</button>
+      <button id="removeBtn">Remove</button>
+    </div>
+
+    <!-- Add Form -->
+    <form id="addForm" class="hidden">
+      <h2>Add QM Item</h2>
+      <div class="form-group">
+        <label for="addName">Name</label>
+        <input type="text" id="addName" name="name" required />
+      </div>
+      <div class="form-group">
+        <label for="addID">ID</label>
+        <input type="text" id="addID" name="id" required />
+      </div>
+      <div class="form-group">
+        <label for="addCategory">Category</label>
+        <input type="text" id="addCategory" name="category" required />
+      </div>
+      <div class="form-group">
+        <label for="addComment">Comment</label>
+        <textarea id="addComment" name="comment"></textarea>
+      </div>
+      <button type="submit">Submit</button>
+    </form>
+
+    <!-- Remove Form -->
+    <form id="removeForm" class="hidden">
+      <h2>Remove QM Item</h2>
+      <div class="form-group">
+        <label for="removeCategory">Category</label>
+        <select id="removeCategory"></select>
+      </div>
+      <div class="form-group">
+        <label for="removeID">ID</label>
+        <select id="removeID"></select>
+      </div>
+      <div class="form-group">
+        <label>Name:</label>
+        <span id="removeNameLabel" class="info-label">[Name will be displayed here]</span>
+      </div>
+      <button type="submit" class="delete-btn">Delete</button>
+    </form>
+
+    <!-- Request Form -->
+    <form id="requestForm" class="hidden">
+      <h2>Request Form</h2>
+      <div class="form-group">
+        <label for="reqName">Name</label>
+        <input type="text" id="reqName" required />
+      </div>
+      <div class="form-group">
+        <label for="reqContact">Contact Number</label>
+        <input type="tel" id="reqContact" required />
+      </div>
+      <div class="form-group">
+        <label for="reqPurpose">Purpose</label>
+        <textarea id="reqPurpose" required></textarea>
+      </div>
+      <div class="form-group">
+        <label for="reqBorrowDate">Date Borrowed</label>
+        <input type="date" id="reqBorrowDate" required />
+      </div>
+      <div class="form-group">
+        <label for="reqReturnDate">Date Returned</label>
+        <input type="date" id="reqReturnDate" required />
+      </div>
+      <div class="form-group">
+        <label for="reqApprovedBy">Approved By</label>
+        <input type="text" id="reqApprovedBy" required />
+      </div>
       <button type="submit">Submit</button>
     </form>
   </div>
 
-  <div id="deleteContainer" style="display:none;">
-    <h3>Delete Item</h3>
-    <select id="docSelect" onchange="showDocDetails(this.value)"></select>
-    <div id="docDetails"></div>
-    <button onclick="deleteDocument()">Delete</button>
-  </div>
-
-  <h2>Inventory Table</h2>
-  <table border="1" id="inventoryTable">
-    <thead>
-      <tr><th>Name</th><th>Category</th><th>Quantity</th><th>Comment</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <script>
-      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-    const firebaseConfig = {
-      apiKey: "AIzaSyAUvX1JAOr5Q7KLE03RpPWlSAgJLrjLPTI",
-      authDomain: "inventoryborrowing.firebaseapp.com",
-      projectId: "inventoryborrowing",
-      storageBucket: "inventoryborrowing.firebasestorage.app",
-      messagingSenderId: "65608029116",
-      appId: "1:65608029116:web:b50fb4448aa519013e11b9",
-      measurementId: "G-90CLH1VMVX"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    function showAddForm() {
-      document.getElementById('formContainer').style.display = 'block';
-      document.getElementById('deleteContainer').style.display = 'none';
-    }
-
-    function showDeleteDropdown() {
-      document.getElementById('formContainer').style.display = 'none';
-      document.getElementById('deleteContainer').style.display = 'block';
-      loadDocumentIDs();
-    }
-
-    document.getElementById('addForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('name').value;
-      const code = document.getElementById('code').value;
-      const category = document.getElementById('category').value;
-      const quantity = parseInt(document.getElementById('quantity').value);
-      const comment = document.getElementById('comment').value;
-
-      await db.collection('Inventory').add({ name, code, category, quantity, comment });
-      location.reload();
-    });
-
-    async function loadDocumentIDs() {
-      const snapshot = await db.collection('Inventory').orderBy('category').get();
-      const select = document.getElementById('docSelect');
-      select.innerHTML = '<option value="">Select Document ID</option>';
-      snapshot.forEach(doc => {
-        const option = document.createElement('option');
-        option.value = doc.id;
-        option.textContent = doc.id;
-        select.appendChild(option);
-      });
-    }
-
-    async function showDocDetails(docId) {
-      if (!docId) return;
-      const doc = await db.collection('Inventory').doc(docId).get();
-      if (doc.exists) {
-        const data = doc.data();
-        document.getElementById('docDetails').innerHTML = `
-          <p><strong>Name:</strong> ${data.name}</p>
-          <p><strong>Category:</strong> ${data.category}</p>
-          <p><strong>Quantity:</strong> ${data.quantity}</p>
-          <p><strong>Comment:</strong> ${data.comment}</p>
-        `;
-      }
-    }
-
-    async function deleteDocument() {
-      const docId = document.getElementById('docSelect').value;
-      if (docId) {
-        await db.collection('Inventory').doc(docId).delete();
-        location.reload();
-      }
-    }
-
-    async function loadInventoryTable() {
-      const snapshot = await db.collection('Inventory').orderBy('category').get();
-      const tbody = document.querySelector('#inventoryTable tbody');
-      tbody.innerHTML = '';
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const row = `<tr>
-          <td>${data.name}</td>
-          <td>${data.category}</td>
-          <td>${data.quantity}</td>
-          <td>${data.comment}</td>
-        </tr>`;
-        tbody.innerHTML += row;
-      });
-    }
-
-    loadInventoryTable();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
