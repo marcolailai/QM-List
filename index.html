@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QM Dashboard</title>
+
+    <!-- Firebase SDKs (Compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="app">
+        <nav id="sidebar" class="collapsed">
+            <button class="toggle" onclick="toggleSidebar()">☰</button>
+            <ul>
+                <li><button class="nav-btn" onclick="navigate('inventory')">QM Inventory</button></li>
+                <li><button class="nav-btn" onclick="navigate('request')">QM Request Form</button></li>
+            </ul>
+            <button id="authBtn" class="signin" onclick="handleAuth()">Sign In</button>
+        </nav>
+        <main id="main"></main>
+    </div>
+
+    <!-- Your app logic (contains Firebase init and app logic) -->
+    <script src="Main.js"></script>
+</body>
+</html>
